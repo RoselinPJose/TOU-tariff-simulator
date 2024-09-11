@@ -4,12 +4,33 @@
 import pandas as pd
 
 #This function simulate_tariff calculates the total cost for each customer based on their energy consumption and a custom tariff structure.
- #consumption_summed: This is a DataFrame that contains the half-hourly energy usage for each customer over a month.
- #rates: A dictionary that maps each time period (e.g., '00:00', '00:30') to a specific tariff rate.
- #limit: The maximum allowed energy consumption (in kWh) before additional charges are applied.
- #excess_multiplier: The multiplier applied to any energy usage beyond the specified limit.
- #total_cost: This Series will store the total cost for each customer. It's initialized with zero for each customer.
 def simulate_tariff(consumption_summed, rates, limit, excess_multiplier):
+    """
+    Simulates the total energy cost for each customer based on the custom tariff rates provided.
+
+    Parameters:
+    -----------
+    consumption_summed : pd.DataFrame
+        A DataFrame where each row represents a customer and each column (except the first) 
+        represents their energy usage for a half-hour period over a month.
+        
+    rates : dict
+        A dictionary containing the rates for each half-hour period (as column names).
+        The rates will be applied to the consumption data.
+
+    limit : float
+        The maximum amount of energy (in kWh) that is charged at the base rate. 
+        Any usage above this limit will be charged at a higher rate (based on excess_multiplier).
+
+    excess_multiplier : float
+        The multiplier applied to any energy usage that exceeds the limit.
+
+    Returns:
+    --------
+    pd.Series
+        A Series where each value represents the total cost of energy usage for a customer 
+        based on the rates and limit provided.
+    """
     total_cost = pd.Series(0, index=consumption_summed.index)
     
     for column in consumption_summed.columns[1:]:  # Start from the second column assuming the first is AnonymisedMPRN
@@ -29,11 +50,30 @@ def simulate_tariff(consumption_summed, rates, limit, excess_multiplier):
 
 #This function compare_with_original compares the simulated costs against the original usage for each customer, calculating the difference and percentage change.
 #Set Index: The total_daily_usage DataFrame is indexed by AnonymisedMPRN to ensure that customer usage data is properly aligned with the simulated cost data.
-#A new DataFrame called comparison is created. It contains the following columns:
-#AnonymisedMPRN: The unique identifier for each customer.
-#Original Usage: The original daily energy usage for each customer from the total_daily_usage file.
-#Simulated Cost: The calculated total cost for each customer based on the custom tariff structure from the simulate_tariff() function.
 def compare_with_original(total_daily_usage, simulated_cost):
+    """
+    Compares the simulated cost of energy usage with the original daily usage to calculate 
+    the differences and percentage differences for each customer.
+
+    Parameters:
+    -----------
+    total_daily_usage : pd.DataFrame
+        A DataFrame where each row represents a customer, with columns for the 'AnonymisedMPRN' 
+        (customer ID) and 'Daily Usage' (total daily energy usage for the customer).
+
+    simulated_cost : pd.Series
+        A Series representing the simulated energy cost for each customer after applying the tariff.
+
+    Returns:
+    --------
+    pd.DataFrame
+        A DataFrame containing the following columns:
+        - 'AnonymisedMPRN': Customer ID
+        - 'Original Usage': The total daily energy usage for each customer
+        - 'Simulated Cost': The simulated cost of energy usage for each customer
+        - 'Difference': The difference between the simulated cost and the original usage
+        - 'Percent Difference': The percentage difference between the simulated cost and the original usage
+    """
     original_usage = total_daily_usage.set_index('AnonymisedMPRN')
     comparison = pd.DataFrame({
         'AnonymisedMPRN': total_daily_usage['AnonymisedMPRN'],\
