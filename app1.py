@@ -22,6 +22,11 @@ total_daily_usage_file = st.file_uploader("Upload Total Daily Usage File", type=
 
 #The files are uploaded by the user and then read into pandas DataFrames.
 if consumption_summed_file and total_daily_usage_file:
+    """
+    Read and process the consumption and daily usage data files once they are uploaded.
+    The data includes customer energy consumption over half-hour periods (consumption_summed) 
+    and the total daily energy usage for each customer (total_daily_usage).
+    """
     # Read the uploaded files
     consumption_summed = pd.read_excel(consumption_summed_file)
     total_daily_usage = pd.read_excel(total_daily_usage_file)
@@ -32,6 +37,11 @@ if consumption_summed_file and total_daily_usage_file:
 
     # Section for creating custom tariffs based on time ranges
     st.subheader("Create Custom Tariff with Time Ranges")
+    """
+    Allow the user to input their custom tariff values based on the time of day. 
+    They can define general rates for the daytime, and special rates for night 
+    and peak time periods.
+    """
     
     # Input general rate for daytime
     general_rate = st.number_input("Enter General Daytime Rate (kWh)", value=0.2, step=0.01, key="general_rate")
@@ -55,6 +65,12 @@ if consumption_summed_file and total_daily_usage_file:
     excess_multiplier = st.number_input("Enter Excess Multiplier", min_value=1.0, step=0.1)
     
     if st.button("Run Simulation with Custom Tariff", key="run_simulation"):
+        """
+        Once the "Run Simulation" button is pressed, the simulation is carried out 
+        using the custom tariff rates provided by the user. The results will include
+        the simulated costs for each customer, comparisons with original usage, 
+        and various visualizations.
+        """
         # Initialize rates with general rate
         custom_tariff_rates = pd.Series(general_rate, index=consumption_summed.columns[1:])
         #This section initializes the tariff rates for each half-hour interval. By default, it sets all intervals to the general daytime rate.
@@ -103,6 +119,10 @@ if consumption_summed_file and total_daily_usage_file:
         ax.set_ylabel('Number of Customers')
         st.pyplot(fig)
         
+        """
+        Count how many customers experienced an increase, decrease, or no change in their energy costs.
+        This is done by analyzing the percentage difference between their original usage and simulated costs.
+        """
         # Count of Increases, Decreases, No Change
         st.write("Count of Customers with Increase, Decrease, or No Change:")
         comparison['Change'] = comparison['Percent Difference'].apply(
@@ -147,6 +167,11 @@ if consumption_summed_file and total_daily_usage_file:
         moderate_loss_threshold = -10
         high_loss_threshold = -50
         
+        """
+        Segment customers based on their savings to classify them into categories:
+        'High Savings', 'Moderate Savings', 'Minimal Change', 'Moderate Loss', 'High Loss'.
+        This segmentation helps understand the impact of the tariff changes on different customers.
+        """
         # Segment customers
         conditions = [
             (comparison['Savings'] >= high_savings_threshold),
