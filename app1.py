@@ -13,15 +13,20 @@ from simulation1 import simulate_tariff, compare_with_original
 
 st.title('Custom Tariff TOU Tariff Simulator')
 
-# File upload for consumption and usage data
+# File upload for consumption and usage data.
+#Files upload
+ #consumption_summed_file: This is the file that contains each customer's half-hour usage charge summed for a month.
+ #total_daily_usage_file: This file contains the total daily energy usage for each customer. 
 consumption_summed_file = st.file_uploader("Upload Consumption Summed File", type=["xlsx"], key="consumption_summed_file")
 total_daily_usage_file = st.file_uploader("Upload Total Daily Usage File", type=["xlsx"], key="total_daily_usage_file")
 
+#The files are uploaded by the user and then read into pandas DataFrames.
 if consumption_summed_file and total_daily_usage_file:
     # Read the uploaded files
     consumption_summed = pd.read_excel(consumption_summed_file)
     total_daily_usage = pd.read_excel(total_daily_usage_file)
-    
+
+    #Column names are converted to strings because sometimes time columns (like "00:00", "00:30") might be treated differently. This ensures the column names are processed consistently throughout the analysis.
     # Convert all column names to strings in both DataFrames
     consumption_summed.columns = consumption_summed.columns.astype(str)
 
@@ -42,7 +47,9 @@ if consumption_summed_file and total_daily_usage_file:
     # Input rate multipliers
     night_multiplier = st.number_input("Enter Night Rate Multiplier", value=0.5, step=0.1, key="night_multiplier")
     peak_multiplier = st.number_input("Enter Peak Rate Multiplier", value=1.5, step=0.1, key="peak_multiplier")
-    
+
+    #Limit: This is the maximum amount of energy (in kWh) that can be consumed before an additional charge is applied.
+    #Excess Multiplier: If a customer exceeds the energy limit, the excess usage is multiplied by this value.
     # Input parameters for limit and excess multiplier
     limit = st.number_input("Enter Limit (kWh)", min_value=0.0, step=0.1)
     excess_multiplier = st.number_input("Enter Excess Multiplier", min_value=1.0, step=0.1)
@@ -50,8 +57,13 @@ if consumption_summed_file and total_daily_usage_file:
     if st.button("Run Simulation with Custom Tariff", key="run_simulation"):
         # Initialize rates with general rate
         custom_tariff_rates = pd.Series(general_rate, index=consumption_summed.columns[1:])
+        #This section initializes the tariff rates for each half-hour interval. By default, it sets all intervals to the general daytime rate.
+        #For each half-hour time, the code checks if it falls into the night or peak period and applies the corresponding rate multiplier.
         
         # Apply rates based on time ranges
+        #Peak Rates: If the time falls within the defined peak period, the rate for that interval is multiplied by the peak multiplier.
+        #Night Rates: If the time falls within the night period, the rate is multiplied by the night multiplier.
+        #Daytime Rates: All other times remain at the general rate.
         for time_str in custom_tariff_rates.index:
             time_obj = pd.to_datetime(time_str).time()
         
@@ -64,9 +76,11 @@ if consumption_summed_file and total_daily_usage_file:
         # Daytime rate remains as general_rate (already initialized)
 
         # Run the simulation with the custom tariff rates
+        #The custom tariff rates are applied to the half-hourly consumption for each customer, and the total cost for the month is calculated for each customer.
         simulated_cost = simulate_tariff(consumption_summed, custom_tariff_rates, limit=limit, excess_multiplier=excess_multiplier)
     
         # Compare with original usage
+        #The simulated cost is compared against the original usage to assess how much customers would save or spend more under the new tariff structure.
         comparison = compare_with_original(total_daily_usage, simulated_cost)
         
         # Display results
@@ -185,16 +199,3 @@ if consumption_summed_file and total_daily_usage_file:
         # Write each segment and its customer count to the Streamlit app
         for segment, count in segment_counts.items():
             st.write(f"{segment}: {count} customers")
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
